@@ -654,7 +654,7 @@
       </div>
       <div class="wstat">
         <div class="wstat-val" id="wkNoted" style="color:var(--accent)">0</div>
-        <div class="wstat-lbl">Noted</div>
+        <div class="wstat-lbl">Charts</div>
       </div>
       <div class="wstat">
         <div class="wstat-val" id="wkCalls" style="color:var(--amber)">0</div>
@@ -713,29 +713,21 @@
     </div>
 
     <!-- Seen -->
-    <div class="counter-row">
+    <div class="total-input-row">
       <div class="counter-info">
         <div class="counter-label">Patients Seen</div>
         <div class="counter-sub">Visits completed</div>
       </div>
-      <div class="counter-ctrl">
-        <button class="counter-btn" onclick="decrement('seen')" id="seenMinus">−</button>
-        <div class="counter-val green" id="seenVal">0</div>
-        <button class="counter-btn" onclick="increment('seen')">+</button>
-      </div>
+      <input type="number" id="seenInput" placeholder="0" min="0" oninput="updateProgress()">
     </div>
 
-    <!-- Notes completed -->
-    <div class="counter-row">
+    <!-- Charts Prepped -->
+    <div class="total-input-row">
       <div class="counter-info">
-        <div class="counter-label">Notes Completed</div>
-        <div class="counter-sub">Documentation done</div>
+        <div class="counter-label">Charts Prepped</div>
+        <div class="counter-sub">Documentation completed</div>
       </div>
-      <div class="counter-ctrl">
-        <button class="counter-btn" onclick="decrement('noted')" id="notedMinus">−</button>
-        <div class="counter-val highlight" id="notedVal">0</div>
-        <button class="counter-btn" onclick="increment('noted')">+</button>
-      </div>
+      <input type="number" id="notedInput" placeholder="0" min="0" oninput="updateProgress()">
     </div>
 
     <!-- Live stats row -->
@@ -746,7 +738,7 @@
         <div style="font-size:0.62rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:2px">of clinic</div>
       </div>
       <div style="flex:1;padding:0.85rem 1.1rem;border-right:1px solid var(--border);text-align:center;">
-        <div style="font-size:0.62rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-bottom:0.3rem;">Notes %</div>
+        <div style="font-size:0.62rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-bottom:0.3rem;">Charts %</div>
         <div style="font-family:'IBM Plex Mono',monospace;font-size:1.5rem;font-weight:600;color:var(--accent)" id="notesPct">—</div>
         <div style="font-size:0.62rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:2px">of seen</div>
       </div>
@@ -760,7 +752,7 @@
     <!-- Progress bar -->
     <div class="progress-wrap">
       <div class="progress-labels">
-        <span>Notes progress</span>
+        <span>Charts progress</span>
         <span id="progressPct">0 / 0</span>
       </div>
       <div class="progress-bar">
@@ -780,11 +772,9 @@
         <div class="counter-label">Calls Handled</div>
         <div class="counter-sub">From phone pool today</div>
       </div>
-      <div class="counter-ctrl">
-        <button class="counter-btn" onclick="decrement('calls')" id="callsMinus">−</button>
-        <div class="counter-val amber" id="callsVal">0</div>
-        <button class="counter-btn" onclick="increment('calls')">+</button>
-      </div>
+      <input type="number" id="callsInput" placeholder="0" min="0"
+        style="width:88px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:1.3rem;font-weight:600;padding:0.4rem 0.5rem;text-align:center;outline:none;-webkit-appearance:none;"
+        oninput="updateCallsDisplay()">
     </div>
   </div>
 
@@ -851,7 +841,7 @@
         </div>
         <div class="modal-stat">
           <div class="modal-stat-val blue" id="eodNoted">0</div>
-          <div class="modal-stat-lbl">Notes Done</div>
+          <div class="modal-stat-lbl">Charts Prepped</div>
         </div>
         <div class="modal-stat">
           <div class="modal-stat-val amber" id="eodCalls">0</div>
@@ -863,7 +853,7 @@
         <span class="modal-highlight-val" id="eodSeenPct">—</span>
       </div>
       <div class="modal-highlight" style="background:var(--accent-l);border-color:#bfdbfe;">
-        <span class="modal-highlight-lbl" style="color:var(--accent)">📄 Notes % of Seen</span>
+        <span class="modal-highlight-lbl" style="color:var(--accent)">📋 Charts % of Seen</span>
         <span class="modal-highlight-val" style="color:var(--accent)" id="eodNotesPct">—</span>
       </div>
       <div id="eodWarn"></div>
@@ -996,7 +986,7 @@ function showEOD(entry) {
   const warn = document.getElementById('eodWarn');
   const outstanding = entry.seen - entry.noted;
   if (outstanding > 0) {
-    warn.innerHTML = `<div class="modal-warn">⚠️ ${outstanding} note${outstanding>1?'s':''} still outstanding</div>`;
+    warn.innerHTML = `<div class="modal-warn">⚠️ ${outstanding} chart${outstanding>1?'s':''} still outstanding</div>`;
   } else {
     warn.innerHTML = '';
   }
@@ -1008,6 +998,8 @@ function closeEOD() {
 }
 
 // ── BOOT ──────────────────────────────────────
+function updateCallsDisplay(){ /* input field — no display needed */ }
+
 function boot() {
   const td = today();
 
@@ -1055,24 +1047,22 @@ function updateDisplay(key) {
 function updateProgress() {
   const total = parseInt(document.getElementById('totalPatients').value) || 0;
   const staff = parseInt(document.getElementById('totalStaff').value) || 0;
-  const noted = counts.noted;
-  const seen  = counts.seen;
+  const seen  = parseInt(document.getElementById('seenInput').value) || 0;
+  const noted = parseInt(document.getElementById('notedInput').value) || 0;
 
   // Seen % of total clinic
   const seenPct = total > 0 ? Math.round((seen / total) * 100) : null;
   document.getElementById('seenPct').textContent = seenPct !== null ? seenPct + '%' : '—';
-  document.getElementById('seenPct').style.color = seenPct >= 100 ? 'var(--green)' : seenPct >= 75 ? 'var(--accent)' : 'var(--green)';
 
-  // Notes % of seen
+  // Charts % of seen
   const notesPct = seen > 0 ? Math.round((noted / seen) * 100) : null;
   document.getElementById('notesPct').textContent = notesPct !== null ? notesPct + '%' : '—';
-  document.getElementById('notesPct').style.color = notesPct >= 100 ? 'var(--green)' : 'var(--accent)';
 
   // Patients per staff
   const pps = staff > 0 ? (total / staff).toFixed(1) : null;
   document.getElementById('ptsPerStaff').textContent = pps !== null ? pps : '—';
 
-  // Progress bar (notes vs seen)
+  // Progress bar (charts vs seen)
   const base = seen || total;
   const barPct = base > 0 ? Math.min(100, Math.round((noted / base) * 100)) : 0;
   document.getElementById('progressPct').textContent = noted + ' / ' + (base || 0);
@@ -1089,13 +1079,15 @@ function saveEntry() {
   const clinic    = document.getElementById('clinicName').value.trim();
   const total     = parseInt(document.getElementById('totalPatients').value) || 0;
   const staff     = parseInt(document.getElementById('totalStaff').value) || 0;
+  const seen      = parseInt(document.getElementById('seenInput').value) || 0;
+  const noted     = parseInt(document.getElementById('notedInput').value) || 0;
   const notes     = document.getElementById('dayNotes').value.trim();
 
   if (!date)   { toast('Please select a date', 'err'); return; }
   if (!clinic) { toast('Please enter a clinic name', 'err'); return; }
 
-  const seenPct  = total > 0 ? Math.round((counts.seen / total) * 100) : 0;
-  const notesPct = counts.seen > 0 ? Math.round((counts.noted / counts.seen) * 100) : 0;
+  const seenPct  = total > 0 ? Math.round((seen / total) * 100) : 0;
+  const notesPct = seen  > 0 ? Math.round((noted / seen) * 100) : 0;
 
   const entry = {
     id:       Date.now().toString(),
@@ -1103,9 +1095,9 @@ function saveEntry() {
     clinic,
     totalPatients: total,
     totalStaff:    staff,
-    seen:     counts.seen,
-    noted:    counts.noted,
-    calls:    counts.calls,
+    seen,
+    noted,
+    calls:    parseInt(document.getElementById('callsInput').value) || 0,
     seenPct,
     notesPct,
     notes,
@@ -1162,6 +1154,15 @@ function finishSave(entry, btn) {
   btn.innerHTML = sheetsUrl ? '💾 Save &amp; Sync to Sheets' : '💾 Save Locally';
   isSaving = false;
 
+  // Reset input fields
+  document.getElementById('totalPatients').value = '';
+  document.getElementById('totalStaff').value = '';
+  document.getElementById('seenInput').value = '';
+  document.getElementById('notedInput').value = '';
+  document.getElementById('callsInput').value = '';
+  document.getElementById('dayNotes').value = '';
+  updateProgress();
+
   if (entry.synced)      toast('Saved & synced to Sheets ✓', 'ok');
   else if (sheetsUrl)    toast('Saved locally — sync pending', 'warn');
   else                   toast('Saved locally ✓', 'ok');
@@ -1201,7 +1202,7 @@ function renderHistory() {
         <div class="hstat">🩺 Total: <strong>${e.totalPatients}</strong></div>
         ${e.totalStaff ? `<div class="hstat">👥 Staff: <strong>${e.totalStaff}</strong></div>` : ''}
         <div class="hstat">✅ Seen: <strong>${e.seen}${e.seenPct ? ' ('+e.seenPct+'%)' : ''}</strong></div>
-        <div class="hstat">📄 Noted: <strong>${e.noted}${e.notesPct ? ' ('+e.notesPct+'%)' : ''}</strong></div>
+        <div class="hstat">📋 Charts: <strong>${e.noted}${e.notesPct ? ' ('+e.notesPct+'%)' : ''}</strong></div>
         <div class="hstat">📞 Calls: <strong>${e.calls}</strong></div>
       </div>
       ${e.notes ? `<div class="history-note">${e.notes}</div>` : ''}
